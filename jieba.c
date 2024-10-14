@@ -33,6 +33,7 @@ zend_object_handlers jieba_object_handlers;
 
 typedef struct _jieba_object {
     Jieba* handler;
+    Extractor* extractor_handle;
     zend_object std;
 }jieba_object;
 
@@ -61,6 +62,7 @@ PHP_METHOD(PHPJieba, cut);
 PHP_METHOD(PHPJieba, cutAll);
 PHP_METHOD(PHPJieba, cutWithoutTagName);
 PHP_METHOD(PHPJieba, insert);
+PHP_METHOD(PHPJieba, extract);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_php_jieba_cut, 0, 0, 1)
     ZEND_ARG_INFO(0, keyword)
@@ -77,6 +79,11 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_php_jieba_insert, 0, 0, 1)
     ZEND_ARG_INFO(0, keyword)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_php_jieba_extract, 0, 0, 2)
+    ZEND_ARG_INFO(0, sentence)
+    ZEND_ARG_INFO(0, topn)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_php_jieba_construct, 0, 0, 5)
@@ -97,6 +104,7 @@ const zend_function_entry php_jieba_methods[] = {
     PHP_ME(PHPJieba, cutAll, arginfo_php_jieba_cut_all, ZEND_ACC_PUBLIC)
     PHP_ME(PHPJieba, cutWithoutTagName, arginfo_php_jieba_cut_without_tag_name, ZEND_ACC_PUBLIC)
     PHP_ME(PHPJieba, insert, arginfo_php_jieba_insert, ZEND_ACC_PUBLIC)
+    PHP_ME(PHPJieba, extract, arginfo_php_jieba_extract, ZEND_ACC_PUBLIC)
     {NULL, NULL, NULL}
 };
 
@@ -155,9 +163,12 @@ PHP_METHOD(PHPJieba, __construct)
     zend_update_property_string(jieba_ce,  JB_Z8_OBJ_P(self), ZEND_STRL("stop_words"), stop_words);
 
     Jieba handle = NewJieba(dict, hmm, user, idf, stop_words);
+    Extractor extractor_handle = NewExtractor(dict, hmm, idf, stop_words, user);
 
     jieba_object *obj = jieba_object_fetch(Z_OBJ_P((self)));
+
     obj->handler = handle;
+    obj->extractor_handle = extractor_handle;
 }
 
 PHP_METHOD(PHPJieba, __destruct)
@@ -165,6 +176,7 @@ PHP_METHOD(PHPJieba, __destruct)
     zval *self = getThis();
     jieba_object *obj = jieba_object_fetch(Z_OBJ_P((self)));
     FreeJieba(obj->handler);
+    FreeExtractor(obj->extractor_handle);
     RETURN_TRUE;
 }
 
@@ -260,6 +272,42 @@ PHP_METHOD(PHPJieba, insert)
         RETURN_TRUE;
     }
     RETURN_FALSE;
+}
+
+PHP_METHOD(PHPJieba, extract)
+{
+   zval *self = getThis();
+   char *sentence;
+   size_t sentence_len;
+   size_t topn;
+
+   // 解析两个参数：一个字符串和一个整数
+   ZEND_PARSE_PARAMETERS_START(2, 2)
+       Z_PARAM_STRING(sentence, sentence_len) // 解析输入句子
+       Z_PARAM_LONG(topn)                     // 解析要提取的数量
+   ZEND_PARSE_PARAMETERS_END();
+
+   jieba_object *obj = jieba_object_fetch(Z_OBJ_P(self));
+
+   // 调用 Extract 函数
+   CJiebaWord* words = Extract(obj->extractor_handle, sentence, sentence_len, topn);
+   CJiebaWord* x;
+
+   // 初始化返回值数组
+   array_init(return_value);
+   for (x = words; x && x->word; x++) {
+       zval word_entry;
+       array_init(&word_entry);
+       // 添加 "word" 元素
+       add_assoc_stringl(&word_entry, "word", x->word, x->len);
+       // 添加 "weight" 元素
+       add_assoc_double(&word_entry, "weight", x->weight); // 假设 weight 是 double 类型
+       add_next_index_zval(return_value, &word_entry);
+   }
+
+   FreeWords(words); // 释放提取的词的内存
+
+   return; // 返回结果
 }
 
 

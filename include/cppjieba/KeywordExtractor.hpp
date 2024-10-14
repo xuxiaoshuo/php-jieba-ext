@@ -19,19 +19,19 @@ class KeywordExtractor {
     double weight;
   }; // struct Word
 
-  KeywordExtractor(const string& dictPath, 
-        const string& hmmFilePath, 
-        const string& idfPath, 
-        const string& stopWordPath, 
-        const string& userDict = "") 
+  KeywordExtractor(const string& dictPath,
+        const string& hmmFilePath,
+        const string& idfPath,
+        const string& stopWordPath,
+        const string& userDict = "")
     : segment_(dictPath, hmmFilePath, userDict) {
     LoadIdfDict(idfPath);
     LoadStopWordDict(stopWordPath);
   }
-  KeywordExtractor(const DictTrie* dictTrie, 
+  KeywordExtractor(const DictTrie* dictTrie,
         const HMMModel* model,
-        const string& idfPath, 
-        const string& stopWordPath) 
+        const string& idfPath,
+        const string& stopWordPath)
     : segment_(dictTrie, model) {
     LoadIdfDict(idfPath);
     LoadStopWordDict(stopWordPath);
@@ -94,7 +94,7 @@ class KeywordExtractor {
  private:
   void LoadIdfDict(const string& idfPath) {
     ifstream ifs(idfPath.c_str());
-    XCHECK(ifs.is_open()) << "open " << idfPath << " failed";
+//    XCHECK(ifs.is_open()) << "open " << idfPath << " failed";
     string line ;
     vector<string> buf;
     double idf = 0.0;
@@ -103,12 +103,12 @@ class KeywordExtractor {
     for (; getline(ifs, line); lineno++) {
       buf.clear();
       if (line.empty()) {
-        XLOG(ERROR) << "lineno: " << lineno << " empty. skipped.";
+//        XLOG(ERROR) << "lineno: " << lineno << " empty. skipped.";
         continue;
       }
       Split(line, buf, " ");
       if (buf.size() != 2) {
-        XLOG(ERROR) << "line: " << line << ", lineno: " << lineno << " empty. skipped.";
+//        XLOG(ERROR) << "line: " << line << ", lineno: " << lineno << " empty. skipped.";
         continue;
       }
       idf = atof(buf[1].c_str());
@@ -116,9 +116,9 @@ class KeywordExtractor {
       idfSum += idf;
 
     }
-
     assert(lineno);
     idfAverage_ = idfSum / lineno;
+//    XLOG(ERROR) << "line: " << lineno << "idfAverage_: " << idfAverage_ << ", idfPath: " << idfPath << "";
     assert(idfAverage_ > 0.0);
   }
   void LoadStopWordDict(const string& filePath) {
@@ -143,7 +143,7 @@ class KeywordExtractor {
 }; // class KeywordExtractor
 
 inline ostream& operator << (ostream& os, const KeywordExtractor::Word& word) {
-  return os << "{\"word\": \"" << word.word << "\", \"offset\": " << word.offsets << ", \"weight\": " << word.weight << "}"; 
+  return os << "{\"word\": \"" << word.word << "\", \"offset\": " << word.offsets << ", \"weight\": " << word.weight << "}";
 }
 
 } // namespace cppjieba

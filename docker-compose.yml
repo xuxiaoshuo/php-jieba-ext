@@ -9,6 +9,7 @@ volumes:
   php-alpine-cache-v3.13:
   php-alpine-cache-v3.14:
   php-alpine-cache-v3.15:
+  php-alpine-cache-v3.16:
 
 
 # services list.

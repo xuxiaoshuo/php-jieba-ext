@@ -160,6 +160,7 @@ CJiebaWord* Extract(Extractor handle, const char* sentence, size_t len, size_t t
     assert(offset < len);
     res[i].word = sentence + offset;
     res[i].len = words[i].word.size();
+    res[i].weight = words[i].weight;
   }
   res[words.size()].word = NULL;
   res[words.size()].len = 0;

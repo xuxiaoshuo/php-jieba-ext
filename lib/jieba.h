@@ -11,6 +11,7 @@ void FreeJieba(Jieba);
 typedef struct {
   const char* word;
   size_t len;
+  double weight;
 } CJiebaWord;
 
 typedef struct {
